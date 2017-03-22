@@ -47,6 +47,8 @@ app.use((req, res, next) => {
 
 app.use('/api', api.routes(memoryStore));
 
+app.use('/flakey', require('./lib/flakey-service'));
+
 // default route (should be swagger)
 app.get('/', (req, res) => res.send('Logged out'));
 

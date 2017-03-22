@@ -84,6 +84,21 @@
           }
         }
       }
+    },
+
+    "/flakey": {
+      "get": {
+        "summary": "Returns a greeting in French, plus greetings from other services in the chain",
+        "description": "An array of greetings - neato!",
+        "produces": [ "text/plain" ],
+        "responses": {
+          "200": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
     }
   }
 }
