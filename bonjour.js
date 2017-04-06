@@ -45,7 +45,40 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api', api.routes(memoryStore));
+// Setup Circuit
+const roi = require('roi');
+const circuitBreaker = require('opossum');
+
+const nextService = 'ola';
+
+// circuit breaker
+const circuitOptions = {
+  maxFailures: 5,
+  timeout: 1000,
+  resetTimeout: 10000,
+  name: nextService,
+  group: `http://{$nextService}:8080`
+};
+
+// Circuit Breaker fallback function
+function fallback () {
+  return [`The ${nextService} service is currently unavailable.`];
+}
+
+// Setup the circuit breaker
+const circuit = circuitBreaker(roi.get, circuitOptions);
+circuit.fallback(fallback);
+
+// Pass the MemoryStore, circuit and the nextservice name into the api route
+app.use('/api', api.routes({memoryStore, circuit, nextService}));
+
+// Create a SSE stream for streaming Hystrix Data
+app.get('/hystrix.stream', (request, response) => {
+  response.writeHead(200, {'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', 'Connection': 'keep-alive'});
+  response.write('retry: 10000\n');
+  response.write('event: connecttime\n');
+  circuit.hystrixStats.getHystrixStream().pipe(response);
+});
 
 // default route (should be swagger)
 app.get('/', (req, res) => res.send('Logged out'));
